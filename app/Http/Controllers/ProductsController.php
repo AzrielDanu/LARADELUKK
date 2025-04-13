@@ -42,58 +42,58 @@ class ProductsController extends Controller
     //         'price' => 'required|numeric|min:1',
     //         'stock' => 'required|numeric|min:1'
     //     ]);
-        
+
     //     $imagePath = $request->file('image')->store('products', 'public');
-    
+
     //     Product::create([
     //         'name' => $request->name,
     //         'image' => $imagePath,
     //         'price' => $request->price, 
     //         'stock' => $request->stock
     //     ]);
-    
+
     //     return redirect()->route('admin.ProductHome')->with('success', 'Product added successfully!');
     // }
-    
+
     public function store(Request $request)
     {
         // Hapus prefix 'RP. ' dan titik pada harga
         $removeRP = str_replace(['RP. ', '.'], '', $request->price);
         $request->merge(['price' => $removeRP]);
-    
+
         // Validasi form input (kecuali gambar)
         $request->validate([
             'name' => 'required|min:3',
             'price' => 'required|numeric|min:1',
             'stock' => 'required|numeric|min:1'
         ]);
-    
+
         // Validasi file image secara manual
         $image = $request->file('image');
         $imageValidation = Validator::make(
             ['image' => $image],
             ['image' => 'image|mimes:png,jpg,jpeg,svg|max:5120']
         );
-        
+
         if ($imageValidation->fails()) {
             return back()->withErrors($imageValidation)->withInput();
         }
-        
+
         // Generate nama file: 20250413_original-name.jpg
         $filename = time() . '_' . $image->getClientOriginalName();
-        
+
         // Pastikan folder untuk penyimpanan gambar ada
         $destinationPath = public_path('storage/assets/images/products');
         if (!File::exists($destinationPath)) {
             File::makeDirectory($destinationPath, 0777, true);
         }
-    
+
         // Simpan file image ke: storage/app/public/assets/images/products/...
         $image->move($destinationPath, $filename);
-        
+
         // Simpan path untuk database (akses url via public/storage/... setelah symlink dibuat)
         $imagePath = 'assets/images/products/' . $filename;
-        
+
         // Simpan produk ke database
         Product::create([
             'name'  => $request->name,
@@ -101,19 +101,16 @@ class ProductsController extends Controller
             'price' => $request->price,
             'stock' => $request->stock,
         ]);
-        
+
         return redirect()->route('admin.ProductHome')->with('success', 'Product added successfully');
     }
-    
+
 
 
     /**
      * Display the specified resource.
      */
-    public function show()
-    {
-    
-    }
+    public function show() {}
 
     /**
      * Show the form for editing the specified resource.
@@ -130,30 +127,45 @@ class ProductsController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Bersihkan input harga dari 'RP. ' dan titik
         $removeRP = str_replace(['RP. ', '.'], '', $request->price);
         $request->merge(['price' => $removeRP]);
 
+        // Validasi input
         $request->validate([
             'name' => 'required|min:3',
             'image' => 'nullable|image|mimes:png,jpg,jpeg,svg|max:5120',
             'price' => 'required|numeric|min:1',
         ]);
-        
+
+        // Ambil produk dari database
         $product = Product::findOrFail($id);
 
+        // Kalau ada file image baru
         if ($request->hasFile('image')) {
-            if ($product->image) {
+            // Hapus gambar lama kalau ada
+            if ($product->image && Storage::disk('public')->exists($product->image)) {
                 Storage::disk('public')->delete($product->image);
             }
-            $product->image = $request->file('image')->store('products', 'public');
+
+            // Generate nama file baru
+            $filename = time() . '_' . $request->file('image')->getClientOriginalName();
+
+            // Simpan file ke storage/app/public/assets/images/products
+            $request->file('image')->storeAs('public/assets/images/products', $filename);
+
+            // Simpan path di database (akses via /storage/...)
+            $product->image = 'assets/images/products/' . $filename;
         }
 
+        // Update data lainnya
         $product->name = $request->name;
         $product->price = $request->price;
         $product->save();
-    
+
         return redirect()->route('admin.ProductHome')->with('success', 'Product edited successfully!');
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -166,22 +178,22 @@ class ProductsController extends Controller
         if ($purchaseWithProduct) {
             return redirect()->back()->with('failed', 'Product is already listed with purchase!');
         } else {
-        $product->delete();
+            $product->delete();
 
-        if ($product->image) {
-            Storage::disk('public')->delete($product->image);
-        }
-    
-        $product->delete();
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
 
-        return redirect()->route('admin.ProductHome')->with('deleted', 'Product deleted successfully!');
+            $product->delete();
+
+            return redirect()->route('admin.ProductHome')->with('deleted', 'Product deleted successfully!');
         }
     }
 
     public function updateStock(Request $request, $id)
     {
         $product = Product::findOrFail($id);
-        
+
         $request->validate([
             'stock' => 'required|numeric|min:' . ($product->stock + 1),
         ], [
@@ -201,5 +213,4 @@ class ProductsController extends Controller
 
         return view('employee.product.index', compact('products'));
     }
-    
 }

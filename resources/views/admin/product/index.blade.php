@@ -138,7 +138,7 @@
                                                 aria-hidden="true" aria-labelledby="exampleModalToggleLabel1">
                                                 <div class="modal-dialog modal-md modal-dialog-centered">
                                                     <div class="modal-content">
-                                                        <div class="modal-header bg-body-secondary border border-0">
+                                                        <div class="modal-header bg-body-secondary border">
                                                             <button type="button" class="btn-close"
                                                                 data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>

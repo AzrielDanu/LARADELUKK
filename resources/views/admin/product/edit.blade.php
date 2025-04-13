@@ -49,7 +49,7 @@
                                 <label for="image" class="form-label">Image <span class="text-danger">*</span></label>
                                 <div class="row">
                                     <div class="col-md-8">
-                                        <input type="file" class="form-control" name="image" id="image">
+                                        <input type="file" class="form-control" name="image" id="image" required accept=".png, .jpg, .jpeg, .svg">
                                     </div>
                                     <div class="col-md-4 text-center">
                                         @if (!empty($products['image']))
