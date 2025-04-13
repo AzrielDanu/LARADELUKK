@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        .info {
+            text-align: left;
+            margin-bottom: 10px;
+        }
+        .info p {
+            margin: 3px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border-bottom: 1px solid #ccc;
+            padding: 5px;
+            text-align: left;
+        }
+        .total {
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Receipt</h2>
+    <p>Indo April</p>
+    <div class="info">
+        <p><strong>Member Status:</strong> {{ $purchase->member ? 'Member' : 'Non-Member'}}</p>
+        <p><strong>Number Phone:</strong> {{ $purchase->member ? $purchase->member->phone : '-' }}</p>
+        <p><strong>Member Since:</strong> {{ $purchase->member ? $purchase->member->created_at->format('d F Y') : '-' }} </p>
+        <p><strong>Member Point:</strong> {{ $purchase->member ? $purchase->member->point : '-' }} </p>
+    </div>
+    <table>
+        <tr>
+            <th>Product Name</th>
+            <th>QTy</th>
+            <th>Price</th>
+            <th>Sub Total</th>
+        </tr>
+        <tr>
+            @foreach ( $detail_purchase as $data)
+                <td>{{ $data->product->name }}</td>
+                <td>{{ $data->quantity }}</td>
+                <td> Rp {{ number_format($data->product->price, 0, ',', '.') }}</td>
+                <td> Rp {{ number_format($data->product->sub_total, 0, ',', '.') }}</td>
+            @endforeach
+        </tr>
+    </table>
+    <p class="total">Total Price: Rp {{ number_format($purchase->used_point > 0 ? $purchase->total_price + $purchase->used_point : $purchase->total_price, 0, ',', '.') }}</p>
+    <p>Used Point: {{ $purchase->used_point > 0  ? $purchase->used_point : '0'  }}</p>
+    <p>Price after used point: Rp. {{ number_format($purchase->used_point > 0 ? $purchase->total_price : 0, 0, ',', '.') }}</p>
+    <p>Change : Rp. {{ number_format( $purchase->change, 0, ',', '.')}}  </p>
+    <p class="footer"> {{ \Carbon\Carbon::parse($purchase->purchase_date)->format('d F Y') }}
+        | {{ $purchase->user->name }}</p>
+    <p class="footer">Thank u for purchase!</p>
+</body>
+</html>
